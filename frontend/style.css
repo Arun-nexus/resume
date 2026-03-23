@@ -1,0 +1,67 @@
+:root {
+    --primary: #4f46e5;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+}
+
+.container { max-width: 1000px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 40px; }
+
+.card {
+    background: var(--card);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.upload-group, .input-group { display: flex; gap: 10px; margin: 15px 0; }
+
+input[type="text"], input[type="file"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.secondary-btn { background: #0f172a; width: 100%; }
+button:hover { opacity: 0.9; }
+
+.result-area {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    white-space: pre-line;
+}
+
+.hidden { display: none; }
+.highlight { color: var(--primary); font-weight: bold; }
+.score-badge {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 10px;
+}

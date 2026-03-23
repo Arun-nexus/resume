@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1> Resume Analyzer</h1>
+            <p>Upload your resume to get deep insights and job recommendations.</p>
+        </header>
+
+        <section class="card">
+            <h2>1. Upload Resume</h2>
+            <div class="upload-group">
+                <input type="file" id="resumeFile" accept="image/*,.pdf">
+                <button onclick="uploadResume()" id="uploadBtn">Analyze & Extract</button>
+            </div>
+            <div id="extractionResult" class="result-area hidden">
+                <h3>Extracted Data</h3>
+                <p><strong>Role:</strong> <span id="extRole"></span></p>
+                <p><strong>Experience:</strong> <span id="extExp"></span></p>
+                <p><strong>Recommended Job:</strong> <span id="recJob" class="highlight"></span></p>
+                <p><strong>Skills:</strong> <span id="extSkills"></span></p>
+            </div>
+        </section>
+
+        <div class="grid">
+            <section class="card">
+                <h2>2. Professional Summary</h2>
+                <button onclick="getDetailedAnalysis()" class="secondary-btn">Generate Insights</button>
+                <div id="analysisResult" class="result-area hidden"></div>
+            </section>
+
+            <section class="card">
+                <h2>3. Job Fit Score</h2>
+                <div class="input-group">
+                    <input type="text" id="desiredJob" placeholder="e.g. Software Engineer">
+                    <button onclick="getPercentageMatch()" class="secondary-btn">Check Match</button>
+                </div>
+                <div id="percentageResult" class="result-area hidden">
+                    <div class="score-badge"><span id="matchScore">0</span>% Match</div>
+                    <div id="matchDetails"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>

@@ -2,7 +2,10 @@ import yaml
 from logger import logging
 import pandas as pd
 import os
-import pickle
+import pickle 
+import json
+import pytesseract
+from PIL import Image
 
 
 def load_parameters() -> dict:
@@ -46,3 +49,24 @@ def open_pickle(path: str):
     
     with open(path, "rb") as f:
         return pickle.load(f)
+
+
+
+
+def extract_text_from_image(path):
+    img = Image.open(path)
+    img = img.convert("L")
+
+    return pytesseract.image_to_string(img)
+
+def safe_parse(output):
+    try:
+        return json.loads(output)
+    except:
+        start = output.find("{")
+        end = output.rfind("}") + 1
+        
+        if start != -1 and end != -1:
+            return json.loads(output[start:end])
+        
+        raise ValueError("No valid JSON found")

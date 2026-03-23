@@ -1,8 +1,8 @@
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from logger import logging
-from notebook.configuration_file import save_pickle
-
+from notebook.configuration_file import save_pickle,open_pickle,safe_parse
+import os 
 
 
 def preprocessing(data: pd.DataFrame):
@@ -14,7 +14,12 @@ def preprocessing(data: pd.DataFrame):
 
         logging.info("data was successfully divided into skills and label")
 
-        transformer = SentenceTransformer("all-MiniLM-L6-v2")
+        if os.path.exists("data/transformer"):
+            transformer = SentenceTransformer("data/transformer")
+        else:
+            transformer = SentenceTransformer("all-MiniLM-L6-v2")
+            transformer.save("data/transformer")
+
         logging.info("sentence transformer has been called successfully")
 
         embedded_skills = transformer.encode(skills)
@@ -23,7 +28,7 @@ def preprocessing(data: pd.DataFrame):
 
         save_pickle("data/embedded_skills.pkl", embedded_skills)
         save_pickle("data/label.pkl", label)
-
+        
         logging.info("vectors and transformer stored successfully")
 
     except Exception as e:

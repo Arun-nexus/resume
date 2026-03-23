@@ -10,8 +10,8 @@ def predicting(new_skills):
         recommendation = []
         
         logging.info("loading necessary pickle files")
-        skills = open_pickle(r"data\embedded_skills.pkl")
-        labels = open_pickle(r"data\label.pkl")
+        skills = open_pickle("data/embedded_skills.pkl")
+        labels = open_pickle("data/label.pkl")
 
         transformer = SentenceTransformer("all-MiniLM-L6-v2")
 

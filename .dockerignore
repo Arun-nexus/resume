@@ -1,0 +1,6 @@
+__pycache__/
+.env
+data/dataset.csv
+logs/
+experiment.ipynb
+venv/
