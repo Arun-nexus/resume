@@ -6,7 +6,7 @@ import pickle
 import json
 import pytesseract
 from PIL import Image
-
+import shutil
 
 def load_parameters() -> dict:
     try:
@@ -52,12 +52,32 @@ def open_pickle(path: str):
 
 
 
-
 def extract_text_from_image(path):
-    img = Image.open(path)
-    img = img.convert("L")
+    try:
+        # Check if tesseract is available in system PATH (Docker case)
+        tesseract_path = shutil.which("tesseract")
 
-    return pytesseract.image_to_string(img)
+        if tesseract_path:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_path
+            logging.info(f"Tesseract found at: {tesseract_path}")
+        else:
+            local_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+            pytesseract.pytesseract.tesseract_cmd = local_path
+            logging.warning(f"Using local tesseract path: {local_path}")
+
+        img = Image.open(path)
+        img = img.convert("L")
+
+        text = pytesseract.image_to_string(img)
+
+        if not text.strip():
+            raise ValueError("No text extracted from image")
+
+        return text
+
+    except Exception as e:
+        logging.error(f"OCR failed: {e}")
+        raise
 
 def safe_parse(output):
     try:
