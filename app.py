@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if not os.getenv("groq_key"):
+if not os.getenv("groq_key") or os.getenv("GROQ_KEY"):
     raise Exception("GROQ_KEY not set")
 
 os.makedirs("data", exist_ok=True)

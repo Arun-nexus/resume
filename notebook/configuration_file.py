@@ -54,7 +54,6 @@ def open_pickle(path: str):
 
 def extract_text_from_image(path):
     try:
-        # Check if tesseract is available in system PATH (Docker case)
         tesseract_path = shutil.which("tesseract")
 
         if tesseract_path:
