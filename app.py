@@ -1,9 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
+import uuid
 
 from src.groq_llm import model
 from notebook.configuration_file import (
@@ -18,6 +19,7 @@ from logger import logging
 
 app = FastAPI()
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,8 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+if not os.getenv("GROQ_KEY"):
+    raise Exception("GROQ_KEY not set")
+
 os.makedirs("data", exist_ok=True)
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
@@ -35,7 +41,7 @@ async def read_root():
         with open("frontend/index.html", "r") as f:
             return f.read()
     except FileNotFoundError:
-        return "<h3>index.html not found in 'frontend' folder</h3>"
+        return "<h3>index.html not found</h3>"
 
 
 @app.get("/health")
@@ -46,26 +52,25 @@ def health():
 @app.post("/resume_analysis")
 async def resume_analyze(file: UploadFile = File(...)):
     try:
-        logging.info(f"starting resume analyzer for {file.filename}")
+        if not file.filename.endswith((".png", ".jpg", ".jpeg", ".pdf")):
+            raise HTTPException(status_code=400, detail="Invalid file type")
 
-        file_path = f"data/{file.filename}"
+        unique_name = f"{uuid.uuid4()}_{file.filename}"
+        file_path = f"data/{unique_name}"
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         text = extract_text_from_image(file_path)
-
         save_pickle("data/text.pkl", text)
 
         prompt = """
-        You are an expert resume parser.
-
         Extract:
         - Technical skills
         - Job role
         - Experience level
 
-        Return ONLY JSON:
+        Return JSON:
         {
           "skills": [],
           "role": "",
@@ -85,51 +90,32 @@ async def resume_analyze(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        logging.error(f"Error in resume_analysis: {e}")
+        logging.error(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/resume_analysis/tell_me")
 async def description():
     try:
         resume_data = open_pickle("data/text.pkl")
 
-        prompt = """
-        You are an expert career advisor.
-
-        Based on the resume, provide:
-        1. Professional summary (2-3 lines)
-        2. Key strengths
-        3. Weaknesses
-        4. Career suggestions
-
-        Rules:
-        - Be concise
-        - Use bullet points
-        - No hallucination
-        """
-
-        response = model(resume_text=resume_data, prompt=prompt)
+        response = model(resume_text=resume_data, prompt="Give summary, strengths, weaknesses, suggestions")
 
         return {"analysis": response}
 
-    except Exception as e:
-        logging.error(f"Error in tell_me: {e}")
+    except Exception:
         raise HTTPException(status_code=500, detail="Analysis failed")
 
 
 @app.post("/resume_analysis/percentage")
-async def job_percentage(desired_job: str):
+async def job_percentage(desired_job: str = Query(...)):
     try:
-        logging.info(f"percentage calculation started for {desired_job}")
-
         resume_data = open_pickle("data/text.pkl")
 
         prompt = f"""
-        You are an expert resume evaluator.
+        Compare with role: {desired_job}
 
-        Compare candidate skills with role: {desired_job}
-
-        Return STRICT JSON:
+        Return JSON:
         {{
           "match_percentage": 0,
           "matching_skills": [],
@@ -146,6 +132,5 @@ async def job_percentage(desired_job: str):
             "analysis": parsed
         }
 
-    except Exception as e:
-        logging.error(f"Error in percentage analysis: {e}")
-        raise HTTPException(status_code=500, detail="Percentage calculation failed")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Percentage failed")

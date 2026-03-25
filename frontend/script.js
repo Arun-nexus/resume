@@ -1,4 +1,4 @@
-const BASE_URL = 'http://127.0.0.1:8000';
+const BASE_URL = '';
 
 async function uploadResume() {
     const fileInput = document.getElementById('resumeFile');
@@ -14,15 +14,20 @@ async function uploadResume() {
             method: 'POST',
             body: formData
         });
+
+        if (!response.ok) throw new Error("Upload failed");
+
         const data = await response.json();
 
         document.getElementById('extractionResult').classList.remove('hidden');
-        document.getElementById('extRole').innerText = data.extracted.role;
-        document.getElementById('extExp').innerText = data.extracted.experience;
-        document.getElementById('recJob').innerText = data.recommended;
-        document.getElementById('extSkills').innerText = data.extracted.skills.join(", ");
+        document.getElementById('extRole').innerText = data.extracted.role || "";
+        document.getElementById('extExp').innerText = data.extracted.experience || "";
+        document.getElementById('recJob').innerText = data.recommended || "";
+        document.getElementById('extSkills').innerText = (data.extracted.skills || []).join(", ");
+
     } catch (error) {
-        alert("Error uploading resume. Ensure backend is running.");
+        alert("Error uploading resume. Check backend.");
+        console.error(error);
     } finally {
         toggleLoading('uploadBtn', false);
     }
@@ -30,13 +35,21 @@ async function uploadResume() {
 
 async function getDetailedAnalysis() {
     try {
-        const response = await fetch(`${BASE_URL}/resume_analysis/tell_me`, { method: 'POST' });
+        const response = await fetch(`${BASE_URL}/resume_analysis/tell_me`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) throw new Error("Analysis failed");
+
         const data = await response.json();
+
         const resDiv = document.getElementById('analysisResult');
         resDiv.classList.remove('hidden');
-        resDiv.innerHTML = data.analysis;
+        resDiv.innerText = data.analysis || "No data";
+
     } catch (error) {
-        alert("Failed to get analysis. Did you upload the resume first?");
+        alert("Failed to get analysis.");
+        console.error(error);
     }
 }
 
@@ -45,20 +58,25 @@ async function getPercentageMatch() {
     if (!job) return alert("Enter a job title");
 
     try {
-        // Sending as query parameter as per your FastAPI definition
         const response = await fetch(`${BASE_URL}/resume_analysis/percentage?desired_job=${encodeURIComponent(job)}`, {
             method: 'POST'
         });
+
+        if (!response.ok) throw new Error("Percentage failed");
+
         const data = await response.json();
-        
+
         document.getElementById('percentageResult').classList.remove('hidden');
-        document.getElementById('matchScore').innerText = data.analysis.match_percentage;
-        
-        let detailsHtml = `<b>Missing Skills:</b> ${data.analysis.missing_skills.join(", ")}<br><br>`;
-        detailsHtml += `<b>Suggestions:</b> ${data.analysis.improvement_suggestions.join(". ")}`;
+        document.getElementById('matchScore').innerText = data.analysis?.match_percentage ?? 0;
+
+        let detailsHtml = `<b>Missing Skills:</b> ${(data.analysis?.missing_skills || []).join(", ")}<br><br>`;
+        detailsHtml += `<b>Suggestions:</b> ${(data.analysis?.improvement_suggestions || []).join(". ")}`;
+
         document.getElementById('matchDetails').innerHTML = detailsHtml;
+
     } catch (error) {
         alert("Error calculating percentage.");
+        console.error(error);
     }
 }
 
