@@ -18,20 +18,17 @@ from logger import logging
 
 def get_poppler_path():
     try:
-        # 1. ENV variable (best for Docker/custom)
         env_path = os.getenv("POPPLER_PATH")
         if env_path and os.path.exists(env_path):
             logging.info(f"Poppler from ENV: {env_path}")
             return env_path
 
-        # 2. System PATH (Linux/Docker)
         system_path = shutil.which("pdftoppm")
         if system_path:
             poppler_bin = os.path.dirname(system_path)
             logging.info(f"Poppler found in system PATH: {poppler_bin}")
             return poppler_bin
 
-        # 3. Windows fallback
         windows_path = r"C:\Users\Arun\Downloads\Release-25.12.0-0\poppler-25.12.0\Library\bin"
         if os.path.exists(windows_path):
             logging.info(f"Poppler using Windows fallback: {windows_path}")

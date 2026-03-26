@@ -16,9 +16,7 @@ from logger import logging
 
 app = FastAPI()
 setup_tesseract()
-# -----------------------------
-# CORS
-# -----------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,15 +25,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -----------------------------
-# ENV CHECK
-# -----------------------------
+
 if not os.getenv("groq_api_key"):
     raise Exception("GROQ_API_KEY not set")
 
-# -----------------------------
-# STATIC
-# -----------------------------
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 
@@ -53,9 +46,7 @@ def health():
     return {"status": "running"}
 
 
-# -----------------------------
-# MAIN ANALYSIS
-# -----------------------------
+
 @app.post("/resume_analysis")
 async def resume_analyze(file: UploadFile = File(...)):
     try:
@@ -64,7 +55,7 @@ async def resume_analyze(file: UploadFile = File(...)):
 
         contents = await file.read()
 
-        # TEXT EXTRACTION (NEW)
+
         text = extract_text(contents, file.filename)
 
         prompt = """
@@ -97,9 +88,6 @@ async def resume_analyze(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Processing failed")
 
 
-# -----------------------------
-# DIRECT ANALYSIS (NO PICKLE)
-# -----------------------------
 @app.post("/resume_analysis/tell_me")
 async def description(file: UploadFile = File(...)):
     try:
@@ -117,9 +105,6 @@ async def description(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Analysis failed")
 
 
-# -----------------------------
-# JOB MATCH
-# -----------------------------
 @app.post("/resume_analysis/percentage")
 async def job_percentage(
     file: UploadFile = File(...),
