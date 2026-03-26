@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 
-if not os.getenv("groq_api_key"):
+if not os.getenv("groq_key"):
     raise Exception("GROQ_API_KEY not set")
 
 app.mount("/static", StaticFiles(directory="frontend"), name="static")

@@ -34,4 +34,3 @@ def model(resume_text, prompt):
     except Exception as e:
         logging.error(f"error occured during communication with groq as {e}")
         raise
-
