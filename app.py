@@ -1,8 +1,9 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import uuid  # ← add karo
 
 from src.groq_llm import model
 from notebook.configuration_file import (
@@ -17,6 +18,9 @@ from logger import logging
 app = FastAPI()
 setup_tesseract()
 
+# ✅ In-memory store — process band = data gone
+resume_store: dict[str, str] = {}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,7 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 if not os.getenv("groq_key"):
     raise Exception("GROQ_API_KEY not set")
@@ -46,7 +49,6 @@ def health():
     return {"status": "running"}
 
 
-
 @app.post("/resume_analysis")
 async def resume_analyze(file: UploadFile = File(...)):
     try:
@@ -54,9 +56,11 @@ async def resume_analyze(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Invalid file type")
 
         contents = await file.read()
-
-
         text = extract_text(contents, file.filename)
+
+        # ✅ Unique ID banao aur text save karo
+        session_id = str(uuid.uuid4())
+        resume_store[session_id] = text
 
         prompt = """
         Extract:
@@ -79,6 +83,7 @@ async def resume_analyze(file: UploadFile = File(...)):
         job_title = predicting(skills_str)
 
         return {
+            "session_id": session_id,   # ← frontend ko yeh return karo
             "extracted": parsed,
             "recommended": job_title
         }
@@ -89,10 +94,11 @@ async def resume_analyze(file: UploadFile = File(...)):
 
 
 @app.post("/resume_analysis/tell_me")
-async def description(file: UploadFile = File(...)):
+async def description(session_id: str = Query(...)):   # ← sirf session_id lo
     try:
-        contents = await file.read()
-        text = extract_text(contents, file.filename)
+        text = resume_store.get(session_id)
+        if not text:
+            raise HTTPException(status_code=404, detail="Session expired or not found. Please re-upload resume.")
 
         response = model(
             resume_text=text,
@@ -101,18 +107,21 @@ async def description(file: UploadFile = File(...)):
 
         return {"analysis": response}
 
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=500, detail="Analysis failed")
 
 
 @app.post("/resume_analysis/percentage")
 async def job_percentage(
-    file: UploadFile = File(...),
-    desired_job: str = Query(...)
+    session_id: str = Query(...),
+    desired_job: str = Query(...)   
 ):
     try:
-        contents = await file.read()
-        text = extract_text(contents, file.filename)
+        text = resume_store.get(session_id)
+        if not text:
+            raise HTTPException(status_code=404, detail="Session expired or not found. Please re-upload resume.")
 
         prompt = f"""
         Compare with role: {desired_job}
@@ -134,5 +143,7 @@ async def job_percentage(
             "analysis": parsed
         }
 
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=500, detail="Percentage failed")

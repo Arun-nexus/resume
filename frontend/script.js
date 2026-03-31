@@ -1,4 +1,5 @@
 const BASE_URL = '';
+let currentSessionId = null; // ← global variable session store karne ke liye
 
 async function uploadResume() {
     const fileInput = document.getElementById('resumeFile');
@@ -19,6 +20,8 @@ async function uploadResume() {
 
         const data = await response.json();
 
+        currentSessionId = data.session_id; // ← session_id save kar lo
+
         document.getElementById('extractionResult').classList.remove('hidden');
         document.getElementById('extRole').innerText = data.extracted.role || "";
         document.getElementById('extExp').innerText = data.extracted.experience || "";
@@ -34,9 +37,11 @@ async function uploadResume() {
 }
 
 async function getDetailedAnalysis() {
+    if (!currentSessionId) return alert("Pehle resume upload karo!"); // ← guard check
+
     try {
-        const response = await fetch(`${BASE_URL}/resume_analysis/tell_me`, {
-            method: 'POST'
+        const response = await fetch(`${BASE_URL}/resume_analysis/tell_me?session_id=${currentSessionId}`, {
+            method: 'POST' // ← session_id automatically lag raha hai
         });
 
         if (!response.ok) throw new Error("Analysis failed");
@@ -56,11 +61,13 @@ async function getDetailedAnalysis() {
 async function getPercentageMatch() {
     const job = document.getElementById('desiredJob').value;
     if (!job) return alert("Enter a job title");
+    if (!currentSessionId) return alert("Pehle resume upload karo!"); // ← guard check
 
     try {
-        const response = await fetch(`${BASE_URL}/resume_analysis/percentage?desired_job=${encodeURIComponent(job)}`, {
-            method: 'POST'
-        });
+        const response = await fetch(
+            `${BASE_URL}/resume_analysis/percentage?session_id=${currentSessionId}&desired_job=${encodeURIComponent(job)}`,
+            { method: 'POST' } // ← dono params automatically
+        );
 
         if (!response.ok) throw new Error("Percentage failed");
 
